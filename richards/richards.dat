@@ -1,0 +1,6 @@
+stop_tol 
+0.01d0
+alpha      theta_S	     theta_R   lambda
+0.0335d0	 0.368d0	     0.102d0   	0.25d0
+Ksat    
+0.09d0
