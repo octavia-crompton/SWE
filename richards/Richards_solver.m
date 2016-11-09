@@ -136,8 +136,7 @@ while(stop_flag==0) % Get C,K,theta
     %disp(['Completed niter = ',int2str(niter), ' iterations.']); % Compute error metric
     if(max(abs(deltam(2:(nz-1))))<stop_tol)
         stop_flag = 1;
-        hnp1mp1 = hnp1m + deltam; % Force boundary conditions
-        
+        hnp1mp1 = hnp1m + deltam; % Force boundary conditions  
         hnp1mp1(1) = htop;
         if(BottomBoundCon==0)
             hnp1mp1(nz) = hbottom;
