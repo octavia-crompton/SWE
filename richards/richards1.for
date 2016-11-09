@@ -28,27 +28,39 @@ C    p1mthetaP1 (thetanp1mp1 )
      &          hn1(nz), p1mp1theta(nz)
 
 C Read input, set up grid, initial conditions.
-      call input   
-
-      do i = 1,nt
+      open(2,file ='test')
+      call input  
+       
+      i = 1
+!       do i = 1,nt
         hn = hSol(1:nz,i)    ! hnp1m --> hn
         thetan = thetaSol(1:nz,i)  ! thetan
         istopFlag = 0
         niter = 0
-        do while (istopFlag.eq.0)
+!         do while (istopFlag.eq.0)
           do k=1,nz    ! cnp1m -> p1mC, knp1m -> p1mK, thetanp1m -> p1mtheta 
             call vanGenuchten(hn(k), p1mtheta(k), p1mK(k), p1mC(k))
           enddo
           call fdiag(p1mC, C)
           barKplus = 0.5d0*matmul(APlus, p1mK)  ! kbarplus -> barKplus
           call fdiag(barKplus, barplusK)  ! Kbarplus -> barplusK
-          barKminus = 0.5d0*matmul(AMinus, p1mK)  ! kbarminus --> barKminus
+          barKminus = matmul(AMinus, p1mK)  ! kbarminus --> barKminus
+          barKminus = 0.5d0*barKminus
           call fdiag(barKminus, barminusK)  ! Kbarminus --> barminusK
-          dumPlus = matmul(barplusK, DeltaPlus)  !  
+          dumPlus = matmul(barplusK, DeltaPlus)  !   
           dumPlusH = matmul(dumPlus, hn)
           dumMinus = matmul(barminusK, DeltaMinus) 
           dumMinusH = matmul(dumMinus, hn)
           A = (1.d0/dt)*C-1.d0/(dz**2.d0)*(dumPlus - dumMinus)
+          
+          write(2,201) A(1:11, 1:11)
+          write(2,*) "  "
+          write(2,201) A(nz-10:nz, nz-10:nz)
+          write(2,*) "  "         
+!           write(2,202) p1mK
+!           write(2,*) "  "
+!           write(2,202) barKplus
+!
 C         Compute the residual of MPFD (RHS)
           R_MPFD = (1.d0/(dz**2.d0))*(dumPlusH - dumMinusH) +
      &         (1.d0/dz)*(barKplus - barKminus) - 
@@ -61,9 +73,9 @@ C         Compute deltam for iteration level m+1
               istopFlag = 1
               hn1 = hn + deltam   ! hnp1mp1 --> hn1
               hn1(1) = htop       
-              if (BottomBoundCon.eq.0) then
+              if (iBottomBoundCon.eq.0) then
                 hn1(nz) = hbottom
-              elseif (BottomBoundCon.eq.1) then
+              elseif (iBottomBoundCon.eq.1) then
                 hn1(nz) = hn1(nz-1)
               endif
               do k=1,nz           ! 
@@ -74,20 +86,22 @@ C         Compute deltam for iteration level m+1
               hn1 = hn + deltam
               hn = hn1 ! Force boundary conditions
               hn(1) = htop;
-              if (BottomBoundCon.eq.0) then
+              if (iBottomBoundCon.eq.0) then
                 hn1(nz) = hbottom
-              elseif (BottomBoundCon.eq.1) then
+              elseif (iBottomBoundCon.eq.1) then
                 hn1(nz) = hn1(nz-1)
               endif
           endif
-        enddo
+!         enddo
         thetaSol(1:nz,i) = p1mp1theta 
-        hSol(1:nz,i) = Hn1 
-      enddo
+        hSol(1:nz,i) = hn1 
+        
+!       enddo
       
       stop
 
- 201  format(' ', 11f10.1)
+ 202  format(' ', 8E12.3)
+ 201  format(' ', 11E12.3)
  200  format(' ', 3f15.10)
 !  201  format(' ','time is ',f8.1,' maximum CFL number is ',f7.4 )
       end
@@ -137,23 +151,30 @@ C     Define matrices that we'll need in solution
       DeltaMinus = 0.d0
       do i = 2,nz-1
         DeltaPlus(i,i) = -1.d0
+        DeltaPlus(i-1,i) = 1.d0  
         DeltaMinus(i,i) = 1.d0
-        DeltaMinus(i-1,i) = -1.d0
+        DeltaMinus(i,i-1) = -1.d0
       enddo
-      
+      DeltaPlus(1,2) = 0.d0
+      DeltaPlus(nz-1, nz) = 1.d0
+            
       do i = 2,nz-1
         APlus(i,i) = 1.d0
-        APlus(i,i-1) = 1.d0  
-        AMinus(i,i) = 1.d0
-        AMinus(i-1,i) = 1.d0        
+        APlus(i-1,i) = 1.d0  
       enddo
-      AMinus(1,1) = 2.d0  ! MPlus --> APlus
+      APlus(1,1) = 2.d0  ! MPlus --> APlus
       APlus(nz,nz) = 2.d0  
-      APlus(nz,nz-1) = 1.d0            
-      APlus(2,1) = 0.d0
+      APlus(nz-1,nz) = 1.d0            
+      APlus(1,2) = 0.d0
 
+
+      do i = 2,nz-1
+        AMinus(i,i) = 1.d0
+        AMinus(i,i-1) = 1.d0        
+      enddo      
       AMinus(1,1) = 2.d0 ! MMinus --> AMinus
-      AMinus(nz,nz) = 2.d0           
+      AMinus(nz,nz) = 2.d0    
+                   
 C Define a storage container to store the pressure heads and soil moistures      
       call vanGenuchten(htop, thetatop, gKtop, gCtop)
 C   thetatop --> thetatop,  Ktop --> gKtop,  Ctop --> gCtop
