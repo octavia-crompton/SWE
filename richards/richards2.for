@@ -33,14 +33,11 @@ C Read input, set up grid, initial conditions.
       call input  
        
 !       i = 1
-      do i = 1,nt
+      do i = 2,nt
         write(*,*) i
-        test  = hSol(1:nz,1)
-        do l = 1, nz
-          write(1, *) l, test(l)
-        enddo
-        hn = hSol(1:nz,i)    ! hnp1m --> hn
-        thetan = thetaSol(1:nz,i)  ! thetan
+
+        hn = hSol(1:nz,i-1)    ! hnp1m --> hn
+        thetan = thetaSol(1:nz,i-1)  ! thetan
         istopFlag = 0
         niter = 0
         do while (istopFlag.eq.0)
@@ -106,6 +103,13 @@ C         Compute deltam for iteration level m+1
         thetaSol(1:nz,i) = p1mp1theta 
         hSol(1:nz,i) = hn1 
         
+        test  = thetaSol(1:nz,i)
+        if (i.eq.3) then
+          do l = 1, nz
+            write(1, *) l, test(l)
+          enddo
+        endif
+
       enddo
 
       
