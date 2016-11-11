@@ -3,11 +3,11 @@ gravity     dt        tmax      xsplit      Manning n
  epsh       beta	  
 0.0025d0   	 2.d0        		 
 xk          ainflt       binflt	      tc		  cappa
-3.9217d-4    0.5d0       2.65d-7    0.d0		0.99d0
+3.9217d-4    0.5d0       2.65d-7    2000.d0		0.99d0
 istart     imass      ifront         print interval
  0         0          0              100 
-number of boundary cells    impermeable  
-  386                        1    
+number of boundary cells    
+  386                       
  j   k            inum    itype            ipos
 1    1             2        1       1        4     1
 1    2             1        1                4     
