@@ -1,5 +1,6 @@
        program richards
 C======================================================================
+C     parameters: nt = 10
 C     gC  (C)  =  specific moisture storage  
 C     gK  (K)  =  hydraulic conductivity  
 C     theta   =  vollumetric moisture content
@@ -32,7 +33,7 @@ C Read input, set up grid, initial conditions.
       open(1,file ='test')      
       call input  
        
-!       i = 1
+!      i = 1
       do i = 2,nt
         write(*,*) i
 
@@ -67,10 +68,6 @@ C         Compute deltam for iteration level m+1
           deltam = matmul(Ainv, R_MPFD)
           niter = niter + 1
           
-          do l = 1, nz
-              write(2, *) l, test2(l,l-1), test2(l,l), test2(l,l+1)
-          enddo
-
                     
           if (maxval(abs(deltam(1:(nz-1)))).lt. stop_tol) then
               istopFlag = 1 !  stop_flag --> istop_flag
@@ -104,15 +101,20 @@ C         Compute deltam for iteration level m+1
         hSol(1:nz,i) = hn1 
         
         test  = thetaSol(1:nz,i)
-        if (i.eq.3) then
+        if (i.eq.nt) then
           do l = 1, nz
             write(1, *) l, test(l)
           enddo
         endif
 
       enddo
-
       
+      if (i.eq.nt) then
+      test2 =Ainv
+      do l = 1, nz
+          write(2, *) l, test2(l,l-1), test2(l,l), test2(l,l+1)
+      enddo
+      endif
       
       stop
 
@@ -182,8 +184,7 @@ C     Define matrices that we'll need in solution
       APlus(nz,nz) = 2.d0  
       APlus(nz-1,nz) = 1.d0            
       APlus(1,2) = 0.d0
-
-
+ 
       do i = 2,nz-1
         AMinus(i,i) = 1.d0
         AMinus(i,i-1) = 1.d0        
@@ -224,7 +225,7 @@ C   thetabottom --> thetabottom,  Kbottom --> gKbottom,  Cbottom --> gCbottom
       
       return
       end   
-
+C   Get rid of common variables: theta_S, theta_R, alpha
 ************************************************************************
       subroutine fdiag(h, hh)
       include 'richards.inc'
