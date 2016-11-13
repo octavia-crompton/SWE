@@ -1,7 +1,7 @@
                                                                         %
 % DESCRIPTION: This is a 1-D Richards equation solver coded up for GEOS   %
 % 697: Fundamentals of Simulation Modeling in the Hydrologic Sciences at  %
-% Boise State University for the Fall 2010 semester. It is intended for   %
+% Boise State University for the Fall 2010 semester. It is intended for   % 
 % student use only.                                                       %
 %                                                                         %
 % The formulation is based on a backward Euler implementation of the      %
@@ -50,6 +50,7 @@ dz = 1; % [cm]
 zmin = 0; % [cm]
 zmax = 100; % [cm]
 z    = (zmin:dz:zmax);
+%% 
 nz   =  length(z);
 
 % Define time variables
@@ -57,9 +58,10 @@ dt = 1800; % [s]
 tmin = 0;  % [s]
 tmax = 18000; % [s]
 t = (tmin:dt:tmax);
-nt = length(t); % Define boundary conditions at top and bottoms
+nt = length(t); 
 
-htop = -30;
+% Define boundary conditions at top and bottom
+htop = -1;
 hbottom = -1000;
 hinit = -1000*ones(nz,1);
 hinit(1) = htop;
@@ -97,10 +99,9 @@ THETA = zeros(nz,nt);
 THETA(:,1) = thetainit;
 
 figure(1); hold on;
-plot(hinit,-flipud(z),'r');
+plot(hinit, -flipud(z),'r');
 xlabel('Pressure head [cm]');
 ylabel('Depth [cm]');
-
 
 figure(2); hold on;
 plot(thetainit,-flipud(z),'r');
@@ -109,7 +110,7 @@ ylabel('Depth [cm]');
 
 % Define the container for an iteration counter
 iterations = zeros(nt-1,1);
-
+tic
 for i=2:nt % Initialize the Picard iteration solver
 hn  = H(:,i-1);
 
@@ -121,16 +122,19 @@ stop_flag = 0;
 % Define an iteration counter
 niter = 0; 
 while(stop_flag==0) % Get C,K,theta
-    [cnp1m,knp1m,thetanp1m] = vanGenuchten(hnp1m,phi); % 1. Compute the individual elements of the A matrix for LHS
+    [cnp1m,knp1m,thetanp1m] = vanGenuchten(hnp1m,phi); 
+    % 1. Compute the individual elements of the A matrix for LHS
     C = diag(cnp1m); 
     kbarplus = (1/2)*MPlus*knp1m;
     Kbarplus = diag(kbarplus); 
     kbarminus = (1/2)*MMinus*knp1m;
     Kbarminus = diag(kbarminus);
     A = (1/dt)*C - 1/((dz)^2)*(Kbarplus*DeltaPlus ...
-        - Kbarminus*DeltaMinus); % 2. Compute the residual of MPFD (RHS)
+        - Kbarminus*DeltaMinus); 
+    % 2. Compute the residual of MPFD (RHS)
     R_MPFD = (1/(dz^2))*(Kbarplus*DeltaPlus*hnp1m - Kbarminus*DeltaMinus*hnp1m) ...
-        + (1/dz)*(kbarplus - kbarminus) - (1/dt)*(thetanp1m - thetan); % 3. Compute deltam for iteration level m+1
+        + (1/dz)*(kbarplus - kbarminus) - (1/dt)*(thetanp1m - thetan); 
+    % 3. Compute deltam for iteration level m+1
     deltam = pinv(A)*R_MPFD; % Increment iteration counter and display number of iterations
     niter = niter + 1;
     %disp(['Completed niter = ',int2str(niter), ' iterations.']); % Compute error metric
@@ -173,7 +177,7 @@ end
  % Save number of iterations
 iterations(i-1) = niter;
 end
-
+toc
 figure(1); hold on;
 plot(hnp1mp1,-flipud(z),'r');
 xlabel('Pressure head [cm]');
