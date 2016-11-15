@@ -12,8 +12,14 @@ function [C,K,theta] = vanGenuchten(h,phi)
     % Compute the hydraulic conductivity
     K = Ksat.*Se.^(1/2).*(1 - (1 - Se.^(1/m)).^m).^2;
     % Compute the specific moisture storage
-    C = -alpha.*n.*sign(h).*(1/n - 1).*(alpha.*abs(h)).^(n - 1).*(theta_R - ...
-        theta_S).*((alpha.*abs(h)).^n + 1).^(1/n - 2);
+    if h <= 0 
+        C =  alpha.*n.*(1/n - 1).*(alpha.*abs(h)).^(n - 1).*(theta_R - ...
+            theta_S).*((alpha.*abs(h)).^n + 1).^(1/n - 2);
+    else 
+        C =  - alpha.*n.*(1/n - 1).*(alpha.*abs(h)).^(n - 1).*(theta_R - ...
+            theta_S).*((alpha.*abs(h)).^n + 1).^(1/n - 2);
+    end
+    
 %     for i=1:length(h)
 %         if h(i) > 0
 %             C(i) = 0;

@@ -26,7 +26,7 @@
 %                                                                         %
 %=========================================================================%% Richard's Solver
 % clear all;
-close all;
+% close all;
 % Stopping tolerance [cm]
 stop_tol = 0.01;
 % Define van Genuchten parameters
@@ -61,7 +61,7 @@ t = (tmin:dt:tmax);
 nt = length(t); 
 
 % Define boundary conditions at top and bottom
-htop = -1;
+htop = -30;
 hbottom = -1000;
 hinit = -1000*ones(nz,1);
 hinit(1) = htop;
@@ -94,7 +94,9 @@ MMinus(nz,1:(nz-1)) = 0;% Define initial conditions
 [Cbottom,Kbottom,thetabottom] = vanGenuchten(hbottom,phi);
 [Cinit,Kinit,thetainit] = vanGenuchten(hinit,phi);
 H = zeros(nz,nt);
+K = zeros(nz,nt);
 H(:,1) = hinit;
+K(:, 1) = Kinit;
 THETA = zeros(nz,nt);
 THETA(:,1) = thetainit;
 
@@ -163,6 +165,7 @@ end
 
 THETA(:,i) = thetanp1mp1; 
 H(:,i) = hnp1mp1;
+K(:,i)= knp1m;
 if(mod(i,1)==0)
     figure(1); hold on;
     plot(hnp1mp1,-flipud(z));
@@ -178,41 +181,61 @@ end
 iterations(i-1) = niter;
 end
 toc
-figure(1); hold on;
-plot(hnp1mp1,-flipud(z),'r');
-xlabel('Pressure head [cm]');
-ylabel('Depth [cm]');
 
-figure(2); hold on;
-plot(thetanp1mp1,-flipud(z),'r');
-xlabel('Soil moisture [cm^3/cm^3]');
-ylabel('Depth [cm]');
+Kp5 = (K(1, :) + K(2, :))/2.;
+Kn5 = (K(end-1, :) + K(end-2, :))/2.; 
 
-figure(3); hold on;
-imagesc(t,flipud(z),H);
-shading interp;
-xlabel('Time [s]');
-ylabel('Depth [cm]');
-xlim([tmin tmax]);
-ylim([zmin zmax]);
-cmaph = colormap;
-colormap(flipud(cmaph));
-colorbar;
-title('Pressure head [cm]');
+fluxin =  -  Kp5.*((H(2, :) - H(1, :))/dz + 1.)*dt ;
+fluxout =   Kn5.*((H(end,:) - H(end-1, :))/dz + 1.)*dt ;
+newmass = sum(THETA(:, 2:end) - THETA(:, 1:end-1) , 1);
 
-figure(4); hold on;
-imagesc(t,flipud(z),THETA);
-shading interp;
-xlabel('Time [s]');
-ylabel('Depth [cm]');
-xlim([tmin tmax]);
-ylim([zmin zmax]);
-cmaph = colormap;
-colormap(flipud(cmaph));
-colorbar;
-title('Soil moisture [cm^3cm^{-3}]');
 
-figure(5);
-plot(t(2:nt),iterations,'o-');
-xlabel('Time [s]');
-ylabel('Number of iterations');save('Richards_outputs.mat','H','THETA');
+plot(fluxin(2:end) + fluxout(2:end) + newmass)
+% plot(hnp1mp1,-flipud(z),'r');
+% xlabel('Pressure head [cm]');
+% ylabel('Depth [cm]');
+% 
+% figure(2); hold on;
+% plot(thetanp1mp1,-flipud(z),'r');
+% xlabel('Soil moisture [cm^3/cm^3]');
+% ylabel('Depth [cm]');
+
+
+
+% plot(hnp1mp1,-flipud(z),'r');
+% xlabel('Pressure head [cm]');
+% ylabel('Depth [cm]');
+% 
+% figure(2); hold on;
+% plot(thetanp1mp1,-flipud(z),'r');
+% xlabel('Soil moisture [cm^3/cm^3]');
+% ylabel('Depth [cm]');
+
+% figure(3); hold on;
+% imagesc(t,flipud(z),H);
+% shading interp;
+% xlabel('Time [s]');
+% ylabel('Depth [cm]');
+% xlim([tmin tmax]);
+% ylim([zmin zmax]);
+% cmaph = colormap;
+% colormap(flipud(cmaph));
+% colorbar;
+% title('Pressure head [cm]');
+% 
+% figure(4); hold on;
+% imagesc(t,flipud(z),THETA);
+% shading interp;
+% xlabel('Time [s]');
+% ylabel('Depth [cm]');
+% xlim([tmin tmax]);
+% ylim([zmin zmax]);
+% cmaph = colormap;
+% colormap(flipud(cmaph));
+% colorbar;
+% title('Soil moisture [cm^3cm^{-3}]');
+% 
+% figure(5);
+% plot(t(2:nt),iterations,'o-');
+% xlabel('Time [s]');
+% ylabel('Number of iterations');save('Richards_outputs.mat','H','THETA');

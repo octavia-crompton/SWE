@@ -45,15 +45,18 @@ C 4 output files: i
       open(123,file='output/rain.out')                  
       call cpu_time(start)       
 C Read input, set up grid, initial conditions.
-      prate = 0.05d0/3600.d0
       call input
+      prate = 0.05d0/3600.d0   
+      tc = 0
+      write(102, *) 'prate = ',  prate
+      
       if(ifront .eq. 1 .or. imass .eq. 1) open(12,file='diag.out')
 	    write(101, *) "time  |  print step  |  time step"            
       iprt = 0 
 C Begin time loop.
       do while (t.lt.tmax)
 	      it=it+1
-        if(t.gt.60.)   dt=0.2d0
+        if(t.gt.60.)  dt=0.2d0
         if (t.gt.60. .and. t.lt.60. + dt) write(102, *) 'dt = ', dt
         if(t.gt.6960.) dt=0.4d0
 c       nprt = tmax/100/dt                
@@ -138,14 +141,14 @@ C     Record infiltration and volume change
         vol = 0.D0
         do j=1,ncol 
           do k=kbeg(j),kend(j)
-!             call source(j,k,hp(j,k),up(j,k),vp(j,k))
+!           call source(j,k,hp(j,k),up(j,k),vp(j,k))
             vol = vol + h(j,k)*area(j,k)
           enddo
         enddo 
         dvol = vol - vol0
         write(105,200) flux1, flux2, flux3, flux4
         flux =  flux1 + flux2 + flux3 + flux4     
-        write(120,200) t, dvol, flux, zinfl        
+        write(120,200) t, dvol, flux, zinfl, dt       
         
 C   Below here only executed every nprt time steps        
         iprt = iprt + 1
@@ -226,7 +229,7 @@ C       write similar for all boundaries
         elseif(told .gt. tc) then
            zold = xk*tc**ainflt + binflt*(told - tc)
 	      endif
-!         winflt = (zold - znew)/dt + prate
+!       winflt = (zold - znew)/dt + prate
         winflt =  prate
         vmag = dsqrt(udum*udum + vdum*vdum)
         fricx = grav*xn*xn*udum*vmag/hdum**(1.D0/3.D0)
@@ -539,7 +542,6 @@ C Specified flow rate (subcritical).
       subroutine grid
       include 'dry.inc'
 C     Read grid data from file 'coords'.
-      write(*,*) prate
       read(2,*) np, ne
     	if(np .gt. nn) then
     	  write(*,*) 'ERROR: parameter nn in file dry.inc is too small'
