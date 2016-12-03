@@ -1,5 +1,4 @@
-% Note: original version
-%  Axes are upside down
+                                                                        %
 % DESCRIPTION: This is a 1-D Richards equation solver coded up for GEOS   %
 % 697: Fundamentals of Simulation Modeling in the Hydrologic Sciences at  %
 % Boise State University for the Fall 2010 semester. It is intended for   % 
@@ -57,16 +56,17 @@ nz   =  length(z);
 % Define time variables
 dt = 1800; % [s]
 tmin = 0;  % [s]
-tmax = 28000; % [s]
+tmax = 36000; % [s]
 t = (tmin:dt:tmax);
 nt = length(t); 
 
 % Define boundary conditions at top and bottom
 htop = -100;
 hbottom = -1000;
-hinit = -1000*ones(nz,1);
-hinit(1) = htop;
-hinit(nz) = hbottom;
+% hinit =  -1000*ones(nz,1);
+hinit =  hnp1m;
+% hinit(nz) = htop;
+% hinit(1) = hbottom;
 
 % Define matrices that we'll need in solution
 BottomBoundCon = 1; % 0 = constant head, 1 = free drainage
@@ -97,21 +97,21 @@ MMinus(nz,1:(nz-1)) = 0;% Define initial conditions
 H = zeros(nz,nt);
 K = zeros(nz,nt);
 H(:,1) = hinit;
-K(:, 1) = Kinit;
+K(:,1) = Kinit;
 THETA = zeros(nz,nt);
 THETA(:,1) = thetainit;
 
-figure(1); hold on;
-plot(hinit, -flipud(z),'r');
+figure(5); hold on;
+plot(hinit, z,'r.-');
 xlabel('Pressure head [cm]');
 ylabel('Depth [cm]');
-title('Original pressure head');
+title('Switched pressure head');
 
-figure(2); hold on;
-plot(thetainit,-flipud(z),'r');
+figure(6); hold on;
+plot(thetainit,z,'r.-');
 xlabel('Soil moisture [cm^3/cm^3]');
 ylabel('Depth [cm]');
-title('Original soil moisture');
+title('Switched soil moisture');
 
 % Define the container for an iteration counter
 iterations = zeros(nt-1,1);
@@ -146,22 +146,26 @@ while(stop_flag==0) % Get C,K,theta
     if(max(abs(deltam(2:(nz-1))))<stop_tol)
         stop_flag = 1;
         hnp1mp1 = hnp1m + deltam; % Force boundary conditions  
-        hnp1mp1(1) = htop;
+        hnp1mp1(nz) = hnp1mp1(nz-1) - dz ;
         if(BottomBoundCon==0)
-            hnp1mp1(nz) = hbottom;
+            hnp1mp1(1) = hbottom;
         elseif(BottomBoundCon==1)
-            hnp1mp1(nz) = hnp1m(nz-1);
+            hnp1mp1(1) = hnp1mp1(2);
+%             hnp1mp1(nz) = hnp1m(nz-1);
         end
         [cnp1m,knp1m,thetanp1m] = vanGenuchten(hnp1mp1,phi);
         thetanp1mp1 = thetanp1m;
     else
         hnp1mp1 = hnp1m + deltam;
         hnp1m = hnp1mp1; % Force boundary conditions
-        hnp1m(1) = htop;
+%       hnp1m(1) = htop;
+        hnp1m(nz) =hnp1m(nz-1)  -dz; 
         if (BottomBoundCon==0)
-            hnp1m(nz) = hbottom;
+            hnp1mp1(1) = hbottom;            
+         
         elseif(BottomBoundCon==1)
-            hnp1m(nz) = hnp1m(nz-1);
+            hnp1m(1) =  hnp1m(2);
+%           hnp1m(nz) = hnp1m(nz-1);
         end
     end 
 end
@@ -169,15 +173,13 @@ end
 THETA(:,i) = thetanp1mp1; 
 H(:,i) = hnp1mp1;
 K(:,i)= knp1m;
-if(mod(i,4)==0)
-    figure(1); hold on;
-    plot(hnp1mp1,-flipud(z));
+if(mod(i,2)==0)
+    figure(5); hold on;
+    plot(hnp1mp1,z);
     xlabel('Pressure head [cm]');
     ylabel('Depth [cm]');
-    lgd = legend(num2str(0), num2str(t(4)),  num2str(t(8)), ...
-          num2str(t(12)),num2str(t(16)), 'Location','northwest');
-    figure(2); hold on;
-    plot(thetanp1mp1,-flipud(z));
+    figure(6); hold on;
+    plot(thetanp1mp1,z);
     xlabel('Soil moisture [cm^3/cm^3]');
     ylabel('Depth [cm]');
     %pause(1)

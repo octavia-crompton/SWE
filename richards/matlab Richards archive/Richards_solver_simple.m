@@ -1,5 +1,6 @@
-% Note: original version
-%  Axes are upside down
+                                                                        
+%  Note :  Axes not switched
+% Includes option to remove matric effects
 % DESCRIPTION: This is a 1-D Richards equation solver coded up for GEOS   %
 % 697: Fundamentals of Simulation Modeling in the Hydrologic Sciences at  %
 % Boise State University for the Fall 2010 semester. It is intended for   % 
@@ -25,7 +26,8 @@
 %     hydraulic conductivity of unsaturated soils. Soil Science Society   %
 %     of America Journal 44, 892?898.                                     %
 %                                                                         %
-%=========================================================================%% Richard's Solver
+%=========================================================================%
+% Richard's Solver
 % clear all;
 % close all;
 % Stopping tolerance [cm]
@@ -50,26 +52,31 @@ phi(6) = Ksat;
 dz = 1; % [cm]
 zmin = 0; % [cm]
 zmax = 100; % [cm]
-z    = (zmin:dz:zmax);
-%% 
+z    = (zmin:dz:zmax); 
 nz   =  length(z);
 
 % Define time variables
-dt = 1800; % [s]
+dt = 2000; % [s]
 tmin = 0;  % [s]
-tmax = 28000; % [s]
+tmax = 400000; % [s]
 t = (tmin:dt:tmax);
 nt = length(t); 
 
+noflux = 0;
+
 % Define boundary conditions at top and bottom
-htop = -100;
-hbottom = -1000;
-hinit = -1000*ones(nz,1);
-hinit(1) = htop;
-hinit(nz) = hbottom;
+if noflux == 1
+    hinit = -1000*ones(nz,1);
+else
+    htop = -1000;
+    hinit = -1000*ones(nz,1);
+    hinit(40:50) = -950;
+    hinit(1) = htop;
+end
+
 
 % Define matrices that we'll need in solution
-BottomBoundCon = 1; % 0 = constant head, 1 = free drainage
+% BottomBoundCon = 1; % 0 = constant head, 1 = free drainage
 DeltaPlus  = diag(-ones(nz,1)) + diag(ones(nz-1,1),1);
 DeltaPlus(1,:) = 0;
 DeltaPlus(nz,:) = 0;
@@ -92,7 +99,6 @@ MMinus(nz,1:(nz-1)) = 0;% Define initial conditions
 
 % Define a storage container to store the pressure heads and soil moistures
 [Ctop,Ktop,thetatop] = vanGenuchten(htop,phi);
-[Cbottom,Kbottom,thetabottom] = vanGenuchten(hbottom,phi);
 [Cinit,Kinit,thetainit] = vanGenuchten(hinit,phi);
 H = zeros(nz,nt);
 K = zeros(nz,nt);
@@ -107,18 +113,17 @@ xlabel('Pressure head [cm]');
 ylabel('Depth [cm]');
 title('Original pressure head');
 
-figure(2); hold on;
-plot(thetainit,-flipud(z),'r');
-xlabel('Soil moisture [cm^3/cm^3]');
-ylabel('Depth [cm]');
-title('Original soil moisture');
+% figure(2); hold on;
+% plot(thetainit,-flipud(z),'r');
+% xlabel('Soil moisture [cm^3/cm^3]');
+% ylabel('Depth [cm]');
+% title('Original soil moisture');
 
 % Define the container for an iteration counter
 iterations = zeros(nt-1,1);
 tic
 for i=2:nt % Initialize the Picard iteration solver
 hn  = H(:,i-1);
-
 hnp1m = hn; 
 thetan = THETA(:,i-1); % Enter the iteration step
 
@@ -134,11 +139,26 @@ while(stop_flag==0) % Get C,K,theta
     Kbarplus = diag(kbarplus); 
     kbarminus = (1/2)*MMinus*knp1m;
     Kbarminus = diag(kbarminus);
-    A = (1/dt)*C - 1/((dz)^2)*(Kbarplus*DeltaPlus ...
-        - Kbarminus*DeltaMinus); 
+    nomatrix = 1;
+    if nomatric == 1
+        A = (1/dt)*C;
+    else
+        A = (1/dt)*C - 1/((dz)^2)*(Kbarplus*DeltaPlus - Kbarminus*DeltaMinus); 
+    end
+    
     % 2. Compute the residual of MPFD (RHS)
-    R_MPFD = (1/(dz^2))*(Kbarplus*DeltaPlus*hnp1m - Kbarminus*DeltaMinus*hnp1m) ...
+    if nomatric == 1
+        R_MPFD = (1/dz)*(kbarplus - kbarminus) - (1/dt)*(thetanp1m - thetan); 
+    else
+        R_MPFD = (1/(dz^2))*(Kbarplus*DeltaPlus*hnp1m - Kbarminus*DeltaMinus*hnp1m) ...
         + (1/dz)*(kbarplus - kbarminus) - (1/dt)*(thetanp1m - thetan); 
+    end
+    
+%     A = (1/dt)*C - 1/((dz)^2)*(Kbarplus*DeltaPlus ...
+%         - Kbarminus*DeltaMinus); 
+%     % 2. Compute the residual of MPFD (RHS)
+%     R_MPFD = (1/(dz^2))*(Kbarplus*DeltaPlus*hnp1m - Kbarminus*DeltaMinus*hnp1m) ...
+%         + (1/dz)*(kbarplus - kbarminus) - (1/dt)*(thetanp1m - thetan); 
     % 3. Compute deltam for iteration level m+1
     deltam = pinv(A)*R_MPFD; % Increment iteration counter and display number of iterations
     niter = niter + 1;
@@ -146,40 +166,40 @@ while(stop_flag==0) % Get C,K,theta
     if(max(abs(deltam(2:(nz-1))))<stop_tol)
         stop_flag = 1;
         hnp1mp1 = hnp1m + deltam; % Force boundary conditions  
-        hnp1mp1(1) = htop;
-        if(BottomBoundCon==0)
-            hnp1mp1(nz) = hbottom;
-        elseif(BottomBoundCon==1)
-            hnp1mp1(nz) = hnp1m(nz-1);
+        if noflux == 1
+            hnp1mp1(1) = hnp1mp1(1) - dz;
+        else
+            hnp1mp1(1) = htop;
         end
+        hnp1mp1(nz) = hnp1m(nz-1);
         [cnp1m,knp1m,thetanp1m] = vanGenuchten(hnp1mp1,phi);
         thetanp1mp1 = thetanp1m;
     else
         hnp1mp1 = hnp1m + deltam;
-        hnp1m = hnp1mp1; % Force boundary conditions
-        hnp1m(1) = htop;
-        if (BottomBoundCon==0)
-            hnp1m(nz) = hbottom;
-        elseif(BottomBoundCon==1)
-            hnp1m(nz) = hnp1m(nz-1);
+        hnp1m = hnp1mp1;  % Force boundary conditions
+        if noflux == 1
+            hnp1m(1) = hnp1m(1) - dz;
+        else
+            hnp1m(1) = htop;
         end
+        hnp1m(nz) = hnp1m(nz-1);
     end 
 end
 
 THETA(:,i) = thetanp1mp1; 
 H(:,i) = hnp1mp1;
 K(:,i)= knp1m;
-if(mod(i,4)==0)
+if(mod(i,40)==0)
     figure(1); hold on;
     plot(hnp1mp1,-flipud(z));
     xlabel('Pressure head [cm]');
     ylabel('Depth [cm]');
     lgd = legend(num2str(0), num2str(t(4)),  num2str(t(8)), ...
           num2str(t(12)),num2str(t(16)), 'Location','northwest');
-    figure(2); hold on;
-    plot(thetanp1mp1,-flipud(z));
-    xlabel('Soil moisture [cm^3/cm^3]');
-    ylabel('Depth [cm]');
+%     figure(2); hold on;
+%     plot(thetanp1mp1,-flipud(z));
+%     xlabel('Soil moisture [cm^3/cm^3]');
+%     ylabel('Depth [cm]');
     %pause(1)
 end 
  % Save number of iterations

@@ -1,5 +1,4 @@
-% Note: original version
-%  Axes are upside down
+                                                                        %
 % DESCRIPTION: This is a 1-D Richards equation solver coded up for GEOS   %
 % 697: Fundamentals of Simulation Modeling in the Hydrologic Sciences at  %
 % Boise State University for the Fall 2010 semester. It is intended for   % 
@@ -64,9 +63,9 @@ nt = length(t);
 % Define boundary conditions at top and bottom
 htop = -100;
 hbottom = -1000;
-hinit = -1000*ones(nz,1);
-hinit(1) = htop;
-hinit(nz) = hbottom;
+hinit = hnp1m;
+% hinit(1) = htop;
+% hinit(nz) = hbottom;
 
 % Define matrices that we'll need in solution
 BottomBoundCon = 1; % 0 = constant head, 1 = free drainage
@@ -88,7 +87,7 @@ MMinus = diag(ones(nz,1)) + diag(ones(nz-1,1),-1);
 MMinus(1,1) = 2;
 MMinus(1,2:nz) = 0;
 MMinus(nz,nz) = 2;
-MMinus(nz,1:(nz-1)) = 0;% Define initial conditions
+MMinus(nz,1:(nz-1)) = 0; % Define initial conditions
 
 % Define a storage container to store the pressure heads and soil moistures
 [Ctop,Ktop,thetatop] = vanGenuchten(htop,phi);
@@ -118,7 +117,6 @@ iterations = zeros(nt-1,1);
 tic
 for i=2:nt % Initialize the Picard iteration solver
 hn  = H(:,i-1);
-
 hnp1m = hn; 
 thetan = THETA(:,i-1); % Enter the iteration step
 
@@ -146,7 +144,7 @@ while(stop_flag==0) % Get C,K,theta
     if(max(abs(deltam(2:(nz-1))))<stop_tol)
         stop_flag = 1;
         hnp1mp1 = hnp1m + deltam; % Force boundary conditions  
-        hnp1mp1(1) = htop;
+        hnp1mp1(1) = hnp1mp1(2)-dz;
         if(BottomBoundCon==0)
             hnp1mp1(nz) = hbottom;
         elseif(BottomBoundCon==1)
@@ -157,7 +155,7 @@ while(stop_flag==0) % Get C,K,theta
     else
         hnp1mp1 = hnp1m + deltam;
         hnp1m = hnp1mp1; % Force boundary conditions
-        hnp1m(1) = htop;
+        hnp1m(1) = hnp1m(2) - dz;
         if (BottomBoundCon==0)
             hnp1m(nz) = hbottom;
         elseif(BottomBoundCon==1)
@@ -189,7 +187,6 @@ toc
 
 Kp5 = (K(1, :) + K(2, :))/2.;
 Kn5 = (K(end-1, :) + K(end-2, :))/2.; 
-
 fluxin =  -  Kp5.*((H(2, :) - H(1, :))/dz + 1.)*dt ;
 fluxout =   Kn5.*((H(end,:) - H(end-1, :))/dz + 1.)*dt ;
 newmass = sum(THETA(:, 2:end) - THETA(:, 1:end-1) , 1);
