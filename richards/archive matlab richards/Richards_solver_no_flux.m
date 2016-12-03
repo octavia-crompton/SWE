@@ -1,4 +1,7 @@
-                                                                        %
+%  Note: Axes are switched  (correct orientation)
+%  No surface flux 
+% Configured to set initial conditions to the output of the most recent run
+
 % DESCRIPTION: This is a 1-D Richards equation solver coded up for GEOS   %
 % 697: Fundamentals of Simulation Modeling in the Hydrologic Sciences at  %
 % Boise State University for the Fall 2010 semester. It is intended for   % 
@@ -201,9 +204,6 @@ newmass = sum(THETA(:, 2:end) - THETA(:, 1:end-1) , 1);
 % plot(thetanp1mp1,-flipud(z),'r');
 % xlabel('Soil moisture [cm^3/cm^3]');
 % ylabel('Depth [cm]');
-
-
-
 % plot(hnp1mp1,-flipud(z),'r');
 % xlabel('Pressure head [cm]');
 % ylabel('Depth [cm]');
