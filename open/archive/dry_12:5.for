@@ -44,9 +44,6 @@ C 4 output files: i
       call cpu_time(start)       
 C Read input, set up grid, initial conditions.
       call input
-      prate =  0.05d0/3600.d0   
-      write(102, *) 'prate = ',  prate
-      
       if(ifront .eq. 1 .or. imass .eq. 1) open(12,file='diag.out')
 	    write(101, *) "time  |  print step  |  time step"            
       iprt = 0 
@@ -220,7 +217,6 @@ C       write similar for all boundaries
           zold = xk*tc**ainflt + binflt*(told - tc)
 	      endif
         winflt = (zold - znew)/dt
-        if(prate .gt. 0.d0) then   winflt = prate
         vmag = dsqrt(udum*udum + vdum*vdum)
         fricx = grav*xn*xn*udum*vmag/hdum**(1.D0/3.D0)
         fricy = grav*xn*xn*vdum*vmag/hdum**(1.D0/3.D0)
@@ -228,7 +224,7 @@ C       write similar for all boundaries
 	      qs(2) = 0.5D0*udum*winflt - fricx - grav*hdum*sx(j,k)
         qs(3) = 0.5D0*vdum*winflt - fricy - grav*hdum*sy(j,k)
       else
-        qs(1) = prate
+        qs(1) = 0.d0
         qs(2) = 0.d0
         qs(3) = 0.d0
       endif
@@ -401,7 +397,7 @@ C Predictor.
         qs(2) = qs(2)/h(j,k)
         qs(3) = qs(3)/h(j,k)
       else
-        qs(1) = prate
+        qs(1) = 0.d0
         qs(2) = 0.d0
         qs(3) = 0.d0
 	    endif
@@ -410,7 +406,7 @@ C Predictor.
      &                            dxi(j,k,2)*dv(j,k,1)) +   
      &    ueta*dh(j,k,2) + h(j,k)*(deta(j,k,1)*du(j,k,2) +
      &                             deta(j,k,2)*dv(j,k,2)) + qs(1))   
-      up(j,k) = u(j,k) - 0.5D0*dt*(      
+      up(j,k) = u(j,k) - 0.5D0*dt*(  
      &    grav*dxi(j,k,1)*dh(j,k,1) + uxi*du(j,k,1) +
      &    grav*deta(j,k,1)*dh(j,k,2) + ueta*du(j,k,2) + qs(2))
       vp(j,k) = v(j,k) - 0.5D0*dt*(
