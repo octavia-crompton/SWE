@@ -573,7 +573,7 @@ C Compute grid metrics.
     	  dz(j,k,2) = sx(j,k)*dxdeta + sy(j,k)*dydeta
       enddo
       enddo
-      write(102,*) "max_slope = " , maxval(sqrt(sx**2+sy**2)*100)/2
+      write(102,*) "max_slope = ", maxval(sqrt(sx**2+sy**2)*100)/2
 C Compute cell face angles.
       do j=1,ncol
       do k=kbeg(j),kend(j)
