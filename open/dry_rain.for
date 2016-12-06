@@ -41,13 +41,10 @@ C 4 output files: i
       open(105,file='output/allfluxes.out')
       open(120,file='output/dvol.out')                  
       open(102,file='output/meta.out')                  
-      open(122,file='output/area.out')                  
-      open(123,file='output/rain.out')                  
       call cpu_time(start)       
 C Read input, set up grid, initial conditions.
       call input
-      prate = 0.05d0/3600.d0   
-      tc = 0
+      prate =  0.05d0/3600.d0   
       write(102, *) 'prate = ',  prate
       
       if(ifront .eq. 1 .or. imass .eq. 1) open(12,file='diag.out')
@@ -56,12 +53,12 @@ C Read input, set up grid, initial conditions.
 C Begin time loop.
       do while (t.lt.tmax)
 	      it=it+1
-        if(t.gt.60.)  dt=0.2d0
-        if (t.gt.60. .and. t.lt.60. + dt) write(102, *) 'dt = ', dt
+        if(t.gt.60.)   dt=0.2d0
+        if(t.gt.60. .and. t.lt.60. + dt) write(102, *) 'dt = ', dt
         if(t.gt.6960.) dt=0.4d0
 c       nprt = tmax/100/dt                
         t = t + dt
-        amax = 0.D0
+        amax = 0.d0
 C Compute predictor.
         do j=1,ncol
         do k=kbeg(j),kend(j)
@@ -76,7 +73,7 @@ C Loop over cells to compute fluxes.
         flux4 = 0.d0
         do j=1,ncol
         do k=kbeg(j),kend(j)
-          call bconds(j,k,hp,up,vp) 
+          call bconds(j,k,hp,up,vp)
           call fluxes(j-1,j,k,k,1)          ! vertical faces.   
           call fluxes(j,j,k-1,k,2)          ! horizontal faces.
           do i=1,inum(j,k)
@@ -118,10 +115,9 @@ C Check for negative depth.
             if(q(j,k,1) .gt. 0.D0) then
               h(j,k) = q(j,k,1)
             else
-              write(*,*) 'bad'
-	            q(j,k,1) = 0.D0 
+	            q(j,k,1) = 0.D0
               h(j,k) = 0.D0
-        endif
+            endif
 C Neglect momentum in nearly dry cells.
         if(h(j,k) .lt. epsh) then  
            u(j,k) = 0.d0
@@ -148,28 +144,22 @@ C     Record infiltration and volume change
         dvol = vol - vol0
         write(105,200) flux1, flux2, flux3, flux4
         flux =  flux1 + flux2 + flux3 + flux4     
-        write(120,200) t, dvol, flux, zinfl, dt       
+        write(120,200) t, dvol, flux, zinfl, dt
         
 C   Below here only executed every nprt time steps        
         iprt = iprt + 1
         if(iprt .eq. nprt) then
 	       iprt = 0
-         itp = itp +  1
-         call myoutput         
+         itp = itp + 1
+         call myoutput
          write(*,201) t, amax*dt
-	      endif    
-
+	      endif
       enddo
       
       call cpu_time(finish)
       print '("Time = ",f7.3," seconds.")',finish-start
-      do j=1,ncol 
-        do k=kbeg(j),kend(j)
-          write(122,*) j,k, area(j,k)
-        enddo
-      enddo
-      
       stop
+      
  200  format(' ',f8.1, 5e19.8)
  201  format(' ','time is ',f8.1,' maximum CFL number is ',f7.4 )
       end
@@ -178,7 +168,7 @@ C   Below here only executed every nprt time steps
       include 'dry.inc'
   
 C 	  file 101 is 'time.out'  -  to keep track of the time stpes
-      write(101, 203)  t, itp, it
+      write(101, 203) t, itp, it
 C 	  file 100 is 'myout.out' 
       do j=1,ncol
         do k=kbeg(j),kend(j)
@@ -191,7 +181,7 @@ C    Loop over cells to compute fluxes.  file 104 is 'fluxes.out'
       do j=1,ncol
         do k=kbeg(j),kend(j)
           do i=1,inum(j,k)
-            if( ipos(j,k,i) .eq. 3 .and. itype(j,k,i) .eq. 4 ) then   ! horizontal boundaries
+            if(ipos(j,k,i).eq. 3 .and. itype(j,k,i).eq. 4) then   ! horizontal boundaries
 C                   write(104, *) j,k, f(j,k,1, 2)
                 write(104, *) j,k,f(j,k+1,1, 2)*ds(j,k+1, 2)
             endif
@@ -202,7 +192,7 @@ C                   write(104, *) j,k, f(j,k,1, 2)
 C       write similar for all boundaries
       return
  202  format(' ', i8, f9.2)
- 203  format(' ', f7.2 , 4i6, 4i6 )
+ 203  format(' ', f7.2 , 4i6, 4i6)
       end
 ************************************************************************
       subroutine source(j,k,hdum,udum,vdum)
@@ -215,7 +205,7 @@ C       write similar for all boundaries
         elseif(tnew .gt. 0.d0 .and. tnew .le. tclip) then
           znew = zslope*tnew
         elseif(tnew .gt. tclip .and. tnew .le. tc) then
-          znew = xk*tnew**ainflt  
+          znew = xk*tnew**ainflt
         elseif(tnew .gt. tc) then
           znew = xk*tc**ainflt + binflt*(tnew - tc)
         endif
@@ -227,27 +217,22 @@ C       write similar for all boundaries
         elseif(told .gt. tclip .and. told .le. tc) then
           zold = xk*told**ainflt
         elseif(told .gt. tc) then
-           zold = xk*tc**ainflt + binflt*(told - tc)
+          zold = xk*tc**ainflt + binflt*(told - tc)
 	      endif
-!       winflt = (zold - znew)/dt + prate
-        winflt =  prate
+        winflt = (zold - znew)/dt
+        if(prate .gt. 0.d0) then   winflt = prate
         vmag = dsqrt(udum*udum + vdum*vdum)
         fricx = grav*xn*xn*udum*vmag/hdum**(1.D0/3.D0)
         fricy = grav*xn*xn*vdum*vmag/hdum**(1.D0/3.D0)
-        qs(1) = winflt 
+        qs(1) = winflt
 	      qs(2) = 0.5D0*udum*winflt - fricx - grav*hdum*sx(j,k)
         qs(3) = 0.5D0*vdum*winflt - fricy - grav*hdum*sy(j,k)
       else
-        qs(1) = 0.d0 + prate
+        qs(1) = prate
         qs(2) = 0.d0
         qs(3) = 0.d0
       endif
-!       if (j .eq. 40 .and. k .eq. 50) then
-!         write(123,200) t0(j, k), tnew, told, (zold - znew)/dt
-!         write(123,200) prate, (zold - znew)/dt, winflt
-!       endif
       return
-  200  format(' ', 5e18.6)      
       end
 ************************************************************************
       subroutine fluxes(jl,jr,kl,kr,i1)
@@ -416,7 +401,7 @@ C Predictor.
         qs(2) = qs(2)/h(j,k)
         qs(3) = qs(3)/h(j,k)
       else
-        qs(1) = 0.d0 + prate
+        qs(1) = prate
         qs(2) = 0.d0
         qs(3) = 0.d0
 	    endif
@@ -425,7 +410,7 @@ C Predictor.
      &                            dxi(j,k,2)*dv(j,k,1)) +   
      &    ueta*dh(j,k,2) + h(j,k)*(deta(j,k,1)*du(j,k,2) +
      &                             deta(j,k,2)*dv(j,k,2)) + qs(1))   
-      up(j,k) = u(j,k) - 0.5D0*dt*(
+      up(j,k) = u(j,k) - 0.5D0*dt*(      
      &    grav*dxi(j,k,1)*dh(j,k,1) + uxi*du(j,k,1) +
      &    grav*deta(j,k,1)*dh(j,k,2) + ueta*du(j,k,2) + qs(2))
       vp(j,k) = v(j,k) - 0.5D0*dt*(
@@ -455,7 +440,7 @@ C Neglect momentum in nearly dry cells.
       dimension hdum(0:nx,0:ny), udum(0:nx,0:ny), vdum(0:nx,0:ny)
 C   Loop over all boundary faces in the cell. 
       do i=1, inum(j,k)
-        if(ipos(j,k,i) .eq. 1) then! front face.
+        if(ipos(j,k,i) .eq. 1) then ! front face.
             jj = j
             kk = k-1
             jl = j
@@ -463,7 +448,7 @@ C   Loop over all boundary faces in the cell.
             j2 = j
             k2 = k+1
             io = 2 
-        elseif(ipos(j,k,i) .eq. 2) then! right face.
+        elseif(ipos(j,k,i) .eq. 2) then ! right face.
             jj = j+1
             kk = k 
             jl = j+1 
@@ -471,7 +456,7 @@ C   Loop over all boundary faces in the cell.
             j2 = j-1
             k2 = k
             io = 1
-        elseif(ipos(j,k,i) .eq. 3) then   ! back face.
+        elseif(ipos(j,k,i) .eq. 3) then ! back face.
             jj = j
             kk = k+1
             jl = j
@@ -479,7 +464,7 @@ C   Loop over all boundary faces in the cell.
             j2 = j
             k2 = k-1 
             io = 2 
-        elseif(ipos(j,k,i) .eq. 4) then  ! left face.
+        elseif(ipos(j,k,i) .eq. 4) then ! left face.
             jj = j-1
             kk = k 
             jl = j

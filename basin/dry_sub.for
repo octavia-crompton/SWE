@@ -27,6 +27,7 @@ C     xn     = Manning bed roughness coefficient.
 C   Added :  flux tracking
 C             meta.out -  print dt and hnorm to file for python use
 C             code to turn of influx at tc in bconds subroutine
+C             infiltration subroutine
 C   Removed:  movie subroutine, ilim = 0, volume and front tracking 
 C             unused boundary conditions  (2, 3 and 5)
 C             unused subroutines interp, movie, output, sample
@@ -235,6 +236,7 @@ C       write similar for all boundaries
       end
 ************************************************************************
       subroutine picard(j,k,hdum, winflt)
+C     Making a subroutine for infiltration.
       include 'dry.inc'
       
       tnew = dmax1(0.d0, t - t0(j,k))
