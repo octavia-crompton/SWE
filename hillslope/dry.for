@@ -44,7 +44,7 @@ C 4 output files: i
       call cpu_time(start)       
 C Read input, set up grid, initial conditions.
       call input
-      prate =  0.07d0/3600.d0   
+      prate =  0.1d0/3600.d0   
       write(102, *) 'prate = ',  prate
       
       if(ifront .eq. 1 .or. imass .eq. 1) open(12,file='diag.out')
@@ -53,9 +53,9 @@ C Read input, set up grid, initial conditions.
 C Begin time loop.
       do while (t.lt.tmax)
 	      it=it+1
-        if(t.gt.60.)   dt=0.2d0
+        if(t.gt.60.)   dt=0.1d0
         if(t.gt.60. .and. t.lt.60. + dt) write(102, *) 'dt = ', dt
-        if(t.gt.6960.) dt=0.4d0
+        if(t.gt.6960.) dt=0.w1d0
 c       nprt = tmax/100/dt                
         t = t + dt
         amax = 0.d0
@@ -221,6 +221,7 @@ C       write similar for all boundaries
 	      endif
         winflt = (zold - znew)/dt
         if(prate .gt. 0.d0) winflt = prate
+        winflt = prate
         vmag = dsqrt(udum*udum + vdum*vdum)
         fricx = grav*xn*xn*udum*vmag/hdum**(1.D0/3.D0)
         fricy = grav*xn*xn*vdum*vmag/hdum**(1.D0/3.D0)
@@ -555,6 +556,10 @@ C Compute grid metrics.
         dydxi = 0.5D0*(-y(n1) + y(n2) + y(n3) - y(n4))
         dydeta = 0.5D0*(-y(n1) - y(n2) + y(n3) + y(n4))
         area(j,k) = dxdxi*dydeta - dxdeta*dydxi
+!         write(*,*) dxdxi
+!         write(*,*) dydeta
+!         write(*,*)  dxdeta
+!         write(*,*) dydxi
         if(area(j,k) .le. 0.D0)then
            write(*,*) 'area error in cell ',j,k
            stop

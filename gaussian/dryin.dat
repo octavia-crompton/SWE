@@ -1,5 +1,5 @@
-gravity     dt        tmax      xsplit      Manning n    
-9.806d0    0.02       2000.     100.d0       0.05d0      
+gravity     dt         tmax      xsplit      Manning n    
+9.806d0     0.05       2000.     100.d0       0.05d0      
  epsh       beta   
 0.00025d0    2.d0   
 xk          ainflt       binflt           tc           cappa 

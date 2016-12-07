@@ -29,8 +29,7 @@ C             meta.out -  print dt and hnorm to file for python use
 C             code to turn of influx at tc in bconds subroutine
 C   Removed:  movie subroutine, ilim = 0, volume and front tracking 
 C             unused boundary conditions  (2, 3 and 5)
-C             unused subroutin
-s interp, movie, output, sample
+C             unused subroutins interp, movie, output, sample
 ************************************************************************
       include 'dry.inc'  
       open(2,file ='coords')
@@ -221,7 +220,7 @@ C       write similar for all boundaries
           zold = xk*tc**ainflt + binflt*(told - tc)
 	      endif
         winflt = (zold - znew)/dt
-        if(prate .gt. 0.d0) then   winflt = prate
+        if(prate .gt. 0.d0) winflt = prate
         vmag = dsqrt(udum*udum + vdum*vdum)
         fricx = grav*xn*xn*udum*vmag/hdum**(1.D0/3.D0)
         fricy = grav*xn*xn*vdum*vmag/hdum**(1.D0/3.D0)
