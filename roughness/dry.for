@@ -32,16 +32,11 @@ C             unused boundary conditions  (2, 3 and 5)
 C             unused subroutins interp, movie, output, sample
 ************************************************************************
       include 'dry.inc'
-      CHARACTER*260 folder, tstring
-      Character(10) string
-!       Real               xx, yy
+      character*260 folder
+
       open(2,file ='coords')
       open(3,file ='dryin.dat')
-
-C 4 output files: i
-!       x = 53.65                             ! assign an initial value to x, 53.65
-!       write( tstring, '(f10.2)' )  dt      ! writes 53.65 into the string
-!       write(*,*) tstring 
+      
       folder = 'output/'   
       write(*,*) trim(folder)//'h.out'
 	    open(100,file= trim(folder)//'h.out')
@@ -204,7 +199,7 @@ C    Loop over cells to compute fluxes.  file 104 is 'fluxes.out'
 C       write similar for all boundaries
       return
  202  format(' ', i8, f9.2)
- 203  format(' ', f7.2 , 4i6, 4i6)
+ 203  format(' ', f7.2 , 4i10, 4i10 )
       end
 ************************************************************************
       subroutine source(j,k,hdum,udum,vdum)

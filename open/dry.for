@@ -31,20 +31,30 @@ C   Removed:  movie subroutine, ilim = 0, volume and front tracking
 C             unused boundary conditions  (2, 3 and 5)
 C             unused subroutins interp, movie, output, sample
 ************************************************************************
-      include 'dry.inc'  
+      include 'dry.inc'
+      CHARACTER*260 folder, tstring
+      Character(10) string
+!       Real               xx, yy
       open(2,file ='coords')
       open(3,file ='dryin.dat')
-C 4 output files: i    
-	    open(100,file= 'output/h.out')
-	    open(101,file='output/time.out')
-      open(104,file='output/fluxes.out')
-      open(105,file='output/allfluxes.out')
-      open(120,file='output/dvol.out')                  
-      open(102,file='output/meta.out')                  
+
+C 4 output files: i
+!       x = 53.65                             ! assign an initial value to x, 53.65
+!       write( tstring, '(f10.2)' )  dt      c ! writes 53.65 into the string
+!       write(*,*) tstring 
+      folder = 'output/'   
+      write(*,*) trim(folder)//'h.out'
+	    open(100,file= trim(folder)//'h.out')
+	    open(101,file= trim(folder)//'time.out')
+      open(102,file= trim(folder)//'meta.out')                  
+      open(103,file= trim(folder)//'cfl.out')        
+      open(104,file= trim(folder)//'fluxes.out')
+      open(105,file= trim(folder)//'allfluxes.out')
+      open(120,file='output/dvol.out')                                  
       call cpu_time(start)       
-C Read input, set up grid, initial conditions.
+C Read su, set up grid, initial conditions.
       call input
-      prate =  0.05d0/3600.d0   
+!       prate =  0.07d0/3600.d0
       write(102, *) 'prate = ',  prate
       
       if(ifront .eq. 1 .or. imass .eq. 1) open(12,file='diag.out')
@@ -53,9 +63,9 @@ C Read input, set up grid, initial conditions.
 C Begin time loop.
       do while (t.lt.tmax)
 	      it=it+1
-        if(t.gt.60.)   dt=0.2d0
+!         if(t.gt.60.)   dt=0.2d0
         if(t.gt.60. .and. t.lt.60. + dt) write(102, *) 'dt = ', dt
-        if(t.gt.6960.) dt=0.4d0
+!         if(t.gt.6960.) dt=0.4d0
 c       nprt = tmax/100/dt                
         t = t + dt
         amax = 0.d0
@@ -145,6 +155,7 @@ C     Record infiltration and volume change
         write(105,200) flux1, flux2, flux3, flux4
         flux =  flux1 + flux2 + flux3 + flux4     
         write(120,200) t, dvol, flux, zinfl, dt
+        write(103,*) t, amax*dt
         
 C   Below here only executed every nprt time steps        
         iprt = iprt + 1
@@ -168,7 +179,7 @@ C   Below here only executed every nprt time steps
       include 'dry.inc'
   
 C 	  file 101 is 'time.out'  -  to keep track of the time stpes
-      write(101, 203) t, itp, it
+      write(101, 203) t , itp, it
 C 	  file 100 is 'myout.out' 
       do j=1,ncol
         do k=kbeg(j),kend(j)
@@ -181,9 +192,10 @@ C    Loop over cells to compute fluxes.  file 104 is 'fluxes.out'
       do j=1,ncol
         do k=kbeg(j),kend(j)
           do i=1,inum(j,k)
-            if(ipos(j,k,i).eq. 3 .and. itype(j,k,i).eq. 4) then   ! horizontal boundaries
-C                   write(104, *) j,k, f(j,k,1, 2)
-                write(104, *) j,k,f(j,k+1,1, 2)*ds(j,k+1, 2)
+!             if(ipos(j,k,i).eq. 3 .and. itype(j,k,i).eq. 4) then   ! horizontal boundaries
+!                 write(104, *) j,k,f(j,k+1,1, 2)*ds(j,k+1, 2)
+             if(ipos(j,k,i).eq. 1 .and. itype(j,k,i).eq. 0) then   ! horizontal boundaries
+                 write(104, *) j,k, f(j,k,1, 2)*ds(j,k,2)
             endif
           enddo
         enddo
@@ -192,7 +204,7 @@ C                   write(104, *) j,k, f(j,k,1, 2)
 C       write similar for all boundaries
       return
  202  format(' ', i8, f9.2)
- 203  format(' ', f7.2 , 4i6, 4i6)
+ 203  format(' ', f7.2 , 4i10, 4i10)
       end
 ************************************************************************
       subroutine source(j,k,hdum,udum,vdum)
@@ -200,13 +212,13 @@ C       write similar for all boundaries
 
       if(hdum .ge. epsh) then
 	      tnew = dmax1(0.d0, t - t0(j,k))
-        if(tnew .le. 0.d0) then
+        if(tnew .le. 0.d0) then  ! don't change  (tracking time of wetting)
           znew = 0.d0
-        elseif(tnew .gt. 0.d0 .and. tnew .le. tclip) then
+        elseif(tnew .gt. 0.d0 .and. tnew .le. tclip) then  !  get rid of this
           znew = zslope*tnew
-        elseif(tnew .gt. tclip .and. tnew .le. tc) then
+        elseif(tnew .gt. tclip .and. tnew .le. tc) then  !  philips here
           znew = xk*tnew**ainflt
-        elseif(tnew .gt. tc) then
+        elseif(tnew .gt. tc) then  ! 
           znew = xk*tc**ainflt + binflt*(tnew - tc)
         endif
         told = dmax1(0.d0, t - t0(j,k) - dt)
@@ -541,6 +553,8 @@ C     Read grid data from file 'coords'.
           read(2,*) (nop(j,k,i), i=1,4)
         enddo
       enddo
+      write(102, *) 'ncol = ',  ncol
+      write(102, *) 'nrow = ',  kend(1)
 C Compute grid metrics.
       do j=1,ncol
       do k=kbeg(j),kend(j)
@@ -572,7 +586,8 @@ C Compute grid metrics.
     	  dz(j,k,2) = sx(j,k)*dxdeta + sy(j,k)*dydeta
       enddo
       enddo
-      write(102,*) "max_slope = ", maxval(sqrt(sx**2+sy**2)*100)/2
+      write(102,*) "dx = ",    dxdxi
+      write(102,*) "slope = ", maxval(sqrt(sx**2+sy**2)*100)
 C Compute cell face angles.
       do j=1,ncol
       do k=kbeg(j),kend(j)
@@ -658,7 +673,8 @@ C     Read 199rom file 'dryin.dat'.
       read(3,'(a72)') dum
       read(3,*) grav, dt, tmax, xsplit, xn
       read(3,'(a72)') dum
-      read(3,*) epsh, beta
+      read(3,*) epsh, beta, prate
+      prate =  prate/3600.d0
       read(3,'(a72)') dum
       read(3,*) xk, ainflt, binflt, tc, cappa
       read(3,'(a72)') dum
@@ -678,17 +694,11 @@ C     Read 199rom file 'dryin.dat'.
       enddo
       kbeg(ncol+1) = kbeg(ncol)
       kend(ncol+1) = kend(ncol)
-	    write(*,*) '  grid setup is complete'
+!       write(*,*) '  grid setup is complete'
       read(3,'(a72)') dum
       read(3,*) h0l, u0l, v0l
       read(3,'(a72)') dum
       read(3,*) h0r, u0r, v0r
-      read(3,'(a72)') dum
-      read(3,*) ndir
-      read(3,'(a72)') dum
-      do i=1,ndir
-       read(3,*) j,k,fix(j,k,1),fix(j,k,2),fix(j,k,3),period,amp
-      enddo
 C   write(*,*) 'enter a 1 to set free surface elevation'
 C   write(*,*) 'enter a 2 to set flow depth'
 C   read(*,*) isurf
@@ -702,8 +712,6 @@ C       write(*,*) '      4 = Double Minmod'
 C       write(*,*) '      5 = Beta Family'
 C       read (*,*) ilim
       ilim = 5
-      write(*,*) ' '  
-
 C Set up computational grid.
       call grid
 C Set initial conditions.
@@ -722,8 +730,8 @@ c        dt = tmax/dfloat(nt)
 	            else
                 h(j,k) = h0l
               endif
-              u(j,k) = u0l
-              v(j,k) = v0l
+            u(j,k) = u0l
+            v(j,k) = v0l
             else
               if(isurf .eq. 1) then
                 h(j,k) = h0r - zc(j,k)
@@ -743,44 +751,7 @@ c        dt = tmax/dfloat(nt)
         q(j,k,1) = h(j,k)
         q(j,k,2) = h(j,k)*u(j,k)
         q(j,k,3) = h(j,k)*v(j,k)
-        do i=1,inum(j,k)
-C For fixed flux BCs, must initialize depth.
-          if(itype(j,k,i) .eq. 4) then
-            write(*,*) ' '
-            write(*,*) 'fixed flux BC is requested in cell ',j,k
-            call findbc(i,j,k,jj,kk,j2,k2)
-            if(ipos(j,k,i) .eq. 1 .or. ipos(j,k,i) .eq. 3) then
-              qflux = fix(j,k,2)*cn(j,k,2) + fix(j,k,3)*sn(j,k,2)
-              dx = -dxi(j,k,2)*area(j,k)
-              dy = dxi(j,k,1)*area(j,k)
-              dss = dsqrt(dx*dx + dy*dy)
-              if(h(j,k) .lt. epsh) then
-C                 write(*,*) ' *** bed adjacent to the boundary is dry ***'
-                if(qflux*dz(j,k,2).lt.0.D0.and.xn.gt.0.d0) then
-                  qflux = dabs(qflux)
-                  hnorm=(qflux*xn/dsqrt(dabs(dz(j,k,2)/dss)))
-     &                     **(3.D0/5.D0)                            
-C           write(*,*) ' *** normal depth = ', hnorm,' is specified'
-                    h(jj,kk) = hnorm 
-                    hp(jj,kk) = hnorm    
-	              else
-C           write(*,*) 'adverse slope or zero Manning n in cell'
-C           write(*,*) 'enter initial flow depth at specified'
-C           write(*,*) 'flux boundary ', j,k,ipos(j,k,i)
-C           read(*,*) h(jj,kk)
-                    h(jj,kk) = (- qflux*xn/dsqrt(dabs(dz(j,k,2)/dss)))
-     &                     **(3.D0/5.D0)                      
-                    hp(jj,kk) = h(jj,kk)     
-	              endif
-                write(102, *)  j,k, h(jj,kk)           
-              endif
-              qflux = dabs(qflux)
-              tclip2 = (xk*dss/(qflux*(1.d0-cappa)))
-     &            **(1.d0/(1.d0-ainflt))
-              if(tclip2 .gt. tclip) tclip = tclip2
-            endif
-          endif
-	      enddo
+
       enddo
       enddo
 C For problems with bed seepage.
@@ -798,7 +769,7 @@ C For problems with bed seepage.
        endif
       endif
       itest = 0
-      write(*,*) ' '
+!       write(*,*) ' '
 	    write(*,*) 'initial conditions are set'
 C       pause 'hit return to continue'
       return
