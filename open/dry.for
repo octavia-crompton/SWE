@@ -218,7 +218,7 @@ C       write similar for all boundaries
           znew = zslope*tnew
         elseif(tnew .gt. tclip .and. tnew .le. tc) then  !  philips here
           znew = xk*tnew**ainflt
-        elseif(tnew .gt. tc) then  ! 
+        elseif(tnew .gt. tc) then  !  get rid of this
           znew = xk*tc**ainflt + binflt*(tnew - tc)
         endif
         told = dmax1(0.d0, t - t0(j,k) - dt)
